@@ -153,6 +153,8 @@ import javax.net.ssl.TrustManagerFactory;
  */
 public abstract class NanoHTTPD extends IntentService {
 
+    private static final String TAG = "NanoHttpd";
+
     /**
      * Pluggable strategy for asynchronously executing requests.
      */
@@ -655,8 +657,13 @@ public abstract class NanoHTTPD extends IntentService {
          * Decodes the Multipart Body data and put it into Key/Value pairs.
          */
         private void decodeMultipartFormData(String boundary, String encoding, ByteBuffer fbuf, Map<String, String> parms, Map<String, String> files) throws ResponseException {
+            Log.d(TAG, "decodeMultipartFormData Executed");
             try {
                 int[] boundary_idxs = getBoundaryPositions(fbuf, boundary.getBytes());
+//                int le = boundary_idxs.length;
+//                for (int i = 0; i < le; i++) {
+//                    Log.d(TAG, "boundary_idxs:" + boundary_idxs[i]); // 2, 119, 226, 117902
+//                }
                 if (boundary_idxs.length < 2) {
                     throw new ResponseException(Response.Status.BAD_REQUEST, "BAD REQUEST: Content type is multipart/form-data but contains less than two boundary strings.");
                 }
@@ -1050,9 +1057,11 @@ public abstract class NanoHTTPD extends IntentService {
                 ByteBuffer fbuf = null;
                 if (baos != null) {
                     fbuf = ByteBuffer.wrap(baos.toByteArray(), 0, baos.size());
+                    Log.d(TAG, "fbuf1 -- baos != null");
                 } else {
                     fbuf = randomAccessFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, randomAccessFile.length());
                     randomAccessFile.seek(0);
+                    Log.d(TAG, "fbuf2 -- baos == null"); // executed
                 }
 
                 // If the method is POST, there may be parameters
@@ -1071,6 +1080,7 @@ public abstract class NanoHTTPD extends IntentService {
                             throw new ResponseException(Response.Status.BAD_REQUEST,
                                 "BAD REQUEST: Content type is multipart/form-data but boundary missing. Usage: GET /example/file.html");
                         }
+                        Log.d(TAG, "boundary:" + boundary + " this.parms:" + this.parms + " files:" + files);  // boundary + {} + {}
                         decodeMultipartFormData(boundary, encoding, fbuf, this.parms, files);
                     } else {
                         byte[] postBytes = new byte[fbuf.remaining()];
@@ -1084,6 +1094,7 @@ public abstract class NanoHTTPD extends IntentService {
                             // special files entry "postData" with raw content
                             // data
                             files.put("postData", postLine);
+                            Log.d(TAG, "postData Executed");
                         }
                     }
                 } else if (Method.PUT.equals(this.method)) {
